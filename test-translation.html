@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Translation Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Translation Test</h1>
+    <div id="results"></div>
+    <script type="module">
+        const SUPABASE_URL = 'https://vekbjprfjhcgkhwxykxq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZla2JqcHJmamhjZ2tod3h5a3hxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY0ODQ0NjAsImV4cCI6MjA0MjA2MDQ2MH0.7Qbvn6BqbZnGXH5jvmWUCcYrEVN8YSpE9MWCbsZy9eE';
+        
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function test() {
+            const results = document.getElementById('results');
+            
+            // Test 1: Get Turkish translations
+            results.innerHTML += '<h2>Test 1: Turkish translations for homepage.video</h2>';
+            const { data: trData, error: trError } = await client
+                .from('translations')
+                .select('*')
+                .eq('language_code', 'tr')
+                .like('translation_key', 'homepage.video%');
+            
+            if (trError) {
+                results.innerHTML += `<p style="color: red;">Error: ${JSON.stringify(trError)}</p>`;
+            } else {
+                results.innerHTML += `<p>Found ${trData.length} Turkish translations</p>`;
+                trData.forEach(t => {
+                    results.innerHTML += `<p>${t.translation_key}: ${t.translation_value}</p>`;
+                });
+            }
+            
+            // Test 2: Check localStorage
+            results.innerHTML += '<h2>Test 2: LocalStorage</h2>';
+            results.innerHTML += `<p>selectedLanguage: ${localStorage.getItem('selectedLanguage')}</p>`;
+            results.innerHTML += `<p>translationCacheVersion: ${localStorage.getItem('translationCacheVersion')}</p>`;
+            
+            // Test 3: Clear and reload
+            results.innerHTML += '<h2>Test 3: Actions</h2>';
+            results.innerHTML += '<button onclick="localStorage.clear(); location.reload();">Clear Cache & Reload</button>';
+        }
+        
+        test();
+    </script>
+</body>
+</html>

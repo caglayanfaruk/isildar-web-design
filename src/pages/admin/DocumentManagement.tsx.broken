@@ -1,0 +1,706 @@
+import React, { useState, useEffect } from 'react';
+import { Upload, Download, Trash2, Save, X, FileText, Eye, CreditCard as Edit, Plus } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import toast from 'react-hot-toast';
+import DocumentUploadSelector from '../../components/admin/DocumentUploadSelector';
+
+interface QuickMenuDocument {
+  id: string;
+  type: string;
+  language_code: string;
+  file_id: string | null;
+  display_name: string | null;
+  version: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  media?: {
+    id: string;
+    url: string;
+    filename: string;
+    original_name: string;
+  };
+}
+
+interface Language {
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+const DocumentManagement = () => {
+  const [documents, setDocuments] = useState<QuickMenuDocument[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const [formData, setFormData] = useState({
+    type: 'catalog',
+    language_code: 'tr',
+    file_id: null as string | null,
+    display_name: '',
+    version: '1.0',
+    is_active: true,
+    sort_order: 0
+  });
+
+  useEffect(() => {
+    loadLanguages();
+    loadDocuments();
+  }, []);
+
+  const loadLanguages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('languages')
+        .select('code, name, is_active')
+        .eq('is_active', true)
+        .order('code');
+
+      if (error) throw error;
+      setLanguages(data || []);
+    } catch (error) {
+      console.error('Error loading languages:', error);
+    }
+  };
+
+  const loadDocuments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('quick_menu_documents')
+        .select(`
+          *,
+          media:file_id (
+            id,
+            url,
+            filename,
+            original_name
+          )
+        `)
+        .order('sort_order');
+
+      if (error) throw error;
+      setDocuments(data || []);
+    } catch (error) {
+      console.error('Error loading documents:', error);
+      toast.error('Dökümanlar yüklenirken hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async (docId?: string) => {
+    if (!formData.file_id) {
+      toast.error('Lütfen bir dosya seçin');
+      return;
+    }
+
+    try {
+      if (docId) {
+        const { error } = await supabase
+          .from('quick_menu_documents')
+          .update({
+            ...formData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', docId);
+
+        if (error) throw error;
+        toast.success('Döküman güncellendi');
+        setEditingId(null);
+      } else {
+        const { error } = await supabase
+          .from('quick_menu_documents')
+          .insert([formData]);
+
+        if (error) throw error;
+        toast.success('Döküman eklendi');
+        setShowAddForm(false);
+      }
+
+      loadDocuments();
+      resetForm();
+    } catch (error) {
+      console.error('Error saving document:', error);
+      toast.error('Kaydetme hatası');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Bu dökümanı silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('quick_menu_documents')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Döküman silindi');
+      loadDocuments();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast.error('Silme hatası');
+    }
+  };
+
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('quick_menu_documents')
+        .update({ is_active: !currentStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Durum güncellendi');
+      loadDocuments();
+    } catch (error) {
+      console.error('Error toggling status:', error);
+      toast.error('Güncelleme hatası');
+    }
+  };
+
+  const startEdit = (doc: QuickMenuDocument) => {
+    setFormData({
+      type: doc.type,
+      language_code: doc.language_code,
+      file_id: doc.file_id,
+      display_name: doc.display_name || '',
+      version: doc.version,
+      is_active: doc.is_active,
+      sort_order: doc.sort_order
+    });
+    setEditingId(doc.id);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      type: 'catalog',
+      language_code: 'tr',
+      file_id: null,
+      display_name: '',
+      version: '1.0',
+      is_active: true,
+      sort_order: documents.length
+    });
+    setEditingId(null);
+    setShowAddForm(false);
+  };
+
+  const getTypeText = (type: string) => {
+    switch (type) {
+      case 'catalog': return 'Ürün Kataloğu';
+      case 'price_list': return 'Fiyat Listesi';
+      case 'brochure': return 'Broşür';
+      case 'manual': return 'Kullanım Kılavuzu';
+      default: return type;
+    }
+  };
+
+  const getLanguageText = (code: string) => {
+    const lang = languages.find(l => l.code === code);
+    return lang ? lang.name : code.toUpperCase();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Quick Menu Dökümanları</h1>
+          <p className="text-gray-600 mt-1">Sticky menü için dökümanları yönetin</p>
+        </div>
+        {!showAddForm && !editingId && (
+          <button
+            onClick={() => {
+              resetForm();
+              setShowAddForm(true);
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Yeni Döküman</span>
+          </button>
+        )}
+      </div>
+
+      {showAddForm && (
+        <DocumentForm
+          formData={formData}
+          setFormData={setFormData}
+          languages={languages}
+          onSave={() => handleSave()}
+          onCancel={resetForm}
+        />
+      )}
+      {editingId && (
+        <DocumentForm
+          docId={editingId}
+          formData={formData}
+          setFormData={setFormData}
+          languages={languages}
+          onSave={() => handleSave(editingId)}
+          onCancel={resetForm}
+        />
+      )}
+
+      {!showAddForm && !editingId && (
+        <>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Döküman
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tür
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Dil
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Boyut
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sıra
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Durum
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      İşlemler
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {documents.map((doc) => (
+                    <tr key={doc.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="bg-red-100 p-2 rounded-lg mr-3">
+                            <FileText className="w-5 h-5 text-red-600" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {doc.display_name || doc.media?.original_name || doc.media?.filename || 'No file'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {doc.media?.original_name && `Dosya: ${doc.media.original_name}`}
+                              {doc.media?.original_name && ' • '}
+                              v{doc.version}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {getTypeText(doc.type)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-900">{getLanguageText(doc.language_code)}</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        -
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {doc.sort_order}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleToggleActive(doc.id, doc.is_active)}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            doc.is_active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {doc.is_active ? <Eye className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                          {doc.is_active ? 'Aktif' : 'Pasif'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end space-x-2">
+                          {doc.media?.url && (
+                            <a
+                              href={doc.media.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="İndir"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          )}
+                          <button
+                            onClick={() => startEdit(doc)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Düzenle"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(doc.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {documents.length === 0 && (
+                <div className="text-center py-12">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Henüz döküman eklenmemiş</p>
+                  <button
+                    onClick={() => {
+                      resetForm();
+                      setShowAddForm(true);
+                    }}
+                    className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    İlk dökümanı ekle
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">Çeviri Anahtarları</h3>
+            <p className="text-sm text-blue-800 mb-2">
+              Her döküman türü için çeviri anahtarları ekleyin:
+            </p>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• <code className="bg-blue-100 px-2 py-0.5 rounded">quick_menu.catalog.title</code> - Ürün Kataloğu / Product Catalog</li>
+              <li>• <code className="bg-blue-100 px-2 py-0.5 rounded">quick_menu.price_list.title</code> - Fiyat Listesi / Price List</li>
+              <li>• <code className="bg-blue-100 px-2 py-0.5 rounded">quick_menu.brochure.title</code> - Broşür / Brochure</li>
+              <li>• <code className="bg-blue-100 px-2 py-0.5 rounded">quick_menu.manual.title</code> - Kullanım Kılavuzu / User Manual</li>
+            </ul>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+interface DocumentFormProps {
+  docId?: string;
+  formData: {
+    type: string;
+    language_code: string;
+    file_id: string | null;
+    display_name: string;
+    version: string;
+    is_active: boolean;
+    sort_order: number;
+  };
+  setFormData: React.Dispatch<React.SetStateAction<{
+    type: string;
+    language_code: string;
+    file_id: string | null;
+    display_name: string;
+    version: string;
+    is_active: boolean;
+    sort_order: number;
+  }>>;
+  languages: Language[];
+  onSave: () => void;
+  onCancel: () => void;
+}
+
+const DocumentForm: React.FC<DocumentFormProps> = ({ docId, formData, setFormData, languages, onSave, onCancel }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">
+          {docId ? 'Dökümanı Düzenle' : 'Yeni Döküman Ekle'}
+        </h2>
+        <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Döküman Türü *
+            </label>
+            <select
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="catalog">Ürün Kataloğu</option>
+              <option value="price_list">Fiyat Listesi</option>
+              <option value="brochure">Broşür</option>
+              <option value="manual">Kullanım Kılavuzu</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Dil *
+            </label>
+            <select
+              value={formData.language_code}
+              onChange={(e) => setFormData({ ...formData, language_code: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {languages.map(lang => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Döküman Adı
+          </label>
+          <input
+            type="text"
+            value={formData.display_name}
+            onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+            placeholder="Örn: 2024 Ürün Kataloğu"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <p className="text-xs text-gray-500 mt-1">Admin panelinde görüntülenecek isim</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Versiyon
+            </label>
+            <input
+              type="text"
+              value={formData.version}
+              onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+              placeholder="1.0"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Sıra
+            </label>
+            <input
+              type="number"
+              value={formData.sort_order}
+              onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Dosya *
+          </label>
+          <DocumentUploadSelector
+            selectedDocumentId={formData.file_id}
+            onDocumentSelect={(fileId) => setFormData({ ...formData, file_id: fileId })}
+            onDocumentRemove={() => setFormData({ ...formData, file_id: null })}
+            acceptedFileTypes={['.pdf', '.doc', '.docx']}
+          />
+          <p className="text-xs text-gray-500 mt-2">PDF, DOC veya DOCX dosyası yükleyin</p>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="is_active"
+            checked={formData.is_active}
+            onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
+            Aktif
+          </label>
+        </div>
+
+        <div className="flex space-x-2 pt-4">
+          <button
+            onClick={onSave}
+            className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+          >
+            <Save className="w-4 h-4" />
+            <span>Kaydet</span>
+          </button>
+          <button
+            onClick={onCancel}
+            className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors flex items-center space-x-2"
+          >
+            <X className="w-4 h-4" />
+            <span>İptal</span>
+          </button>
+        </div>
+      </div>
+    </div>
+);
+
+export default DocumentManagement;
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Döküman
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tür
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Dil
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Boyut
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sıra
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Durum
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      İşlemler
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {documents.map((doc) => (
+                    <tr key={doc.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="bg-red-100 p-2 rounded-lg mr-3">
+                            <FileText className="w-5 h-5 text-red-600" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {doc.display_name || doc.media?.original_name || doc.media?.filename || 'No file'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {doc.media?.original_name && `Dosya: ${doc.media.original_name}`}
+                              {doc.media?.original_name && ' • '}
+                              v{doc.version}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {getTypeText(doc.type)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-900">{getLanguageText(doc.language_code)}</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        -
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {doc.sort_order}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleToggleActive(doc.id, doc.is_active)}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            doc.is_active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {doc.is_active ? <Eye className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                          {doc.is_active ? 'Aktif' : 'Pasif'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end space-x-2">
+                          {doc.media?.url && (
+                            <a
+                              href={doc.media.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="İndir"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          )}
+                          <button
+                            onClick={() => startEdit(doc)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Düzenle"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(doc.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {documents.length === 0 && (
+                <div className="text-center py-12">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Henüz döküman eklenmemiş</p>
+                  <button
+                    onClick={() => {
+                      resetForm();
+                      setShowAddForm(true);
+                    }}
+                    className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    İlk dökümanı ekle
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">Çeviri Anahtarları</h3>
+            <p className="text-sm text-blue-800 mb-2">
+              Her döküman türü için çeviri anahtarları ekleyin:
+            </p>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• <code className="bg-blue-100 px-2 py-0.5 rounded">quick_menu.catalog.title</code> - Ürün Kataloğu / Product Catalog</li>
+              <li>• <code className="bg-blue-100 px-2 py-0.5 rounded">quick_menu.price_list.title</code> - Fiyat Listesi / Price List</li>
+              <li>• <code className="bg-blue-100 px-2 py-0.5 rounded">quick_menu.brochure.title</code> - Broşür / Brochure</li>
+              <li>• <code className="bg-blue-100 px-2 py-0.5 rounded">quick_menu.manual.title</code> - Kullanım Kılavuzu / User Manual</li>
+            </ul>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default DocumentManagement;

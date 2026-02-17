@@ -1,0 +1,243 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-black text-white;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  .animation-delay-1000 {
+    animation-delay: 1s;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+  }
+  to {
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #606060;
+}
+
+/* Loading animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Fix for dropdown option visibility */
+select option {
+  background-color: white;
+  color: black;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: #3b82f6;
+  color: white;
+}
+
+/* Fix input and textarea text visibility - default to dark text for light backgrounds */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  color: #1f2937 !important;
+}
+
+/* For dark/translucent backgrounds, use white text */
+input[type="text"].bg-white\/10,
+input[type="number"].bg-white\/10,
+input[type="email"].bg-white\/10,
+input[type="password"].bg-white\/10,
+input[type="search"].bg-white\/10,
+input[type="url"].bg-white\/10,
+input[type="tel"].bg-white\/10,
+input[type="date"].bg-white\/10,
+input[type="time"].bg-white\/10,
+input[type="datetime-local"].bg-white\/10,
+textarea.bg-white\/10,
+select.bg-white\/10,
+input[type="text"].bg-white\/5,
+input[type="number"].bg-white\/5,
+input[type="email"].bg-white\/5,
+input[type="password"].bg-white\/5,
+input[type="search"].bg-white\/5,
+input[type="url"].bg-white\/5,
+input[type="tel"].bg-white\/5,
+input[type="date"].bg-white\/5,
+input[type="time"].bg-white\/5,
+input[type="datetime-local"].bg-white\/5,
+textarea.bg-white\/5,
+select.bg-white\/5,
+input[type="text"].bg-white\/15,
+input[type="number"].bg-white\/15,
+input[type="email"].bg-white\/15,
+input[type="password"].bg-white\/15,
+input[type="search"].bg-white\/15,
+input[type="url"].bg-white\/15,
+input[type="tel"].bg-white\/15,
+input[type="date"].bg-white\/15,
+input[type="time"].bg-white\/15,
+input[type="datetime-local"].bg-white\/15,
+textarea.bg-white\/15,
+select.bg-white\/15,
+input[type="text"].bg-white\/20,
+input[type="number"].bg-white\/20,
+input[type="email"].bg-white\/20,
+input[type="password"].bg-white\/20,
+input[type="search"].bg-white\/20,
+input[type="url"].bg-white\/20,
+input[type="tel"].bg-white\/20,
+input[type="date"].bg-white\/20,
+input[type="time"].bg-white\/20,
+input[type="datetime-local"].bg-white\/20,
+textarea.bg-white\/20,
+select.bg-white\/20 {
+  color: #ffffff !important;
+}
+
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="search"]::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* ReactQuill Editor Styles */
+.ql-container {
+  background-color: white;
+  color: #1f2937 !important;
+}
+
+.ql-editor {
+  color: #1f2937 !important;
+  min-height: 200px;
+}
+
+.ql-editor p,
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor ul,
+.ql-editor ol,
+.ql-editor li,
+.ql-editor strong,
+.ql-editor em,
+.ql-editor u {
+  color: #1f2937 !important;
+}
+
+.ql-editor::before {
+  color: #9ca3af !important;
+}
+
+.ql-toolbar {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.ql-snow .ql-stroke {
+  stroke: #4b5563 !important;
+}
+
+.ql-snow .ql-fill {
+  fill: #4b5563 !important;
+}
+
+.ql-snow .ql-picker-label {
+  color: #4b5563 !important;
+}
+
+/* Hide Bolt.new branding badge */
+iframe[src*="bolt"],
+[class*="bolt-badge"],
+[id*="bolt-badge"],
+a[href*="bolt.new"][class*="fixed"],
+a[href*="bolt.new"][class*="bottom"],
+div[class*="made-with"],
+div[class*="powered-by"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Additional catch-all for bottom-right floating elements */
+body > a[class*="fixed"][class*="bottom"][class*="right"],
+body > div[class*="fixed"][class*="bottom"][class*="right"]:has(a[href*="bolt"]) {
+  display: none !important;
+}

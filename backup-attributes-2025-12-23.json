@@ -1,0 +1,16 @@
+{
+  "backup_date": "2025-12-23",
+  "note": "Backup taken before attribute system redesign",
+  "summary": {
+    "total_attributes": 27,
+    "duplicate_sets": {
+      "Renk": ["renk (19 values)", "color (8 values)"],
+      "Güç": ["guc (24 values)", "power (0 values)"],
+      "IP Sınıfı": ["ip_sinifi (5 values)", "ip-sinifi (0 values)"],
+      "Duy Tipi": ["duy_tipi (411 values)", "duy-tipi (0 values)"]
+    },
+    "category_attributes_count": 0,
+    "products_with_attributes": "100+"
+  },
+  "note_2": "Full backup data saved via SQL queries. Values file at /tmp/cc-agent/55893707/.claude/projects/-tmp-cc-agent-55893707-project/d5b1b1b1-3d88-4194-a51c-bd39c18788a7/tool-results/mcp-supabase-execute_sql-1766486130984.txt"
+}

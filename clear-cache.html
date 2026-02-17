@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cache Temizleniyor</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .status {
+            color: #10b981;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Cache Temizleniyor...</h1>
+        <p id="status" class="status">Lütfen bekleyin...</p>
+    </div>
+    <script>
+        const statusEl = document.getElementById('status');
+
+        async function clearAllCaches() {
+            try {
+                // 1. LocalStorage temizle
+                localStorage.clear();
+                statusEl.textContent = '✓ LocalStorage temizlendi';
+                await new Promise(r => setTimeout(r, 300));
+
+                // 2. SessionStorage temizle
+                sessionStorage.clear();
+                statusEl.textContent = '✓ SessionStorage temizlendi';
+                await new Promise(r => setTimeout(r, 300));
+
+                // 3. Cookie'leri temizle
+                document.cookie.split(";").forEach(function(c) {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                statusEl.textContent = '✓ Cookies temizlendi';
+                await new Promise(r => setTimeout(r, 300));
+
+                // 4. Service Worker temizle
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for(let registration of registrations) {
+                        await registration.unregister();
+                    }
+                    statusEl.textContent = '✓ Service Workers temizlendi';
+                    await new Promise(r => setTimeout(r, 300));
+                }
+
+                // 5. Cache Storage temizle
+                if ('caches' in window) {
+                    const names = await caches.keys();
+                    for (let name of names) {
+                        await caches.delete(name);
+                    }
+                    statusEl.textContent = '✓ Cache Storage temizlendi';
+                    await new Promise(r => setTimeout(r, 300));
+                }
+
+                // 6. IndexedDB temizle
+                if ('indexedDB' in window) {
+                    const dbs = await indexedDB.databases();
+                    for (let db of dbs) {
+                        if (db.name) indexedDB.deleteDatabase(db.name);
+                    }
+                    statusEl.textContent = '✓ IndexedDB temizlendi';
+                    await new Promise(r => setTimeout(r, 300));
+                }
+
+                statusEl.textContent = '✅ Tüm cache temizlendi! Yönlendiriliyor...';
+                await new Promise(r => setTimeout(r, 1000));
+
+                // Hard reload ile ana sayfaya yönlendir
+                window.location.href = '/?nocache=' + Date.now();
+                window.location.reload(true);
+
+            } catch (error) {
+                console.error('Cache temizleme hatası:', error);
+                statusEl.textContent = '⚠️ Bazı cache\'ler temizlenemedi. Ana sayfaya yönlendiriliyorsunuz...';
+                await new Promise(r => setTimeout(r, 2000));
+                window.location.href = '/';
+            }
+        }
+
+        clearAllCaches();
+    </script>
+</body>
+</html>
