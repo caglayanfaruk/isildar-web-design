@@ -109,11 +109,16 @@ const HomepageVideoManagement = () => {
 
   const handleSaveVideoSection = async () => {
     try {
+      const payload = {
+        ...videoFormData,
+        thumbnail_image_id: videoFormData.thumbnail_image_id || null
+      };
+
       if (videoSection) {
         const { error } = await supabase
           .from('homepage_video_section')
           .update({
-            ...videoFormData,
+            ...payload,
             updated_at: new Date().toISOString()
           })
           .eq('id', videoSection.id);
@@ -123,7 +128,7 @@ const HomepageVideoManagement = () => {
       } else {
         const { error } = await supabase
           .from('homepage_video_section')
-          .insert([videoFormData]);
+          .insert([payload]);
 
         if (error) throw error;
         toast.success('Video bölümü oluşturuldu');
