@@ -18,6 +18,7 @@ interface PopupAnnouncement {
   mobile_width: number;
   mobile_height: number;
   cookie_duration_days: number;
+  always_show: boolean;
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;
@@ -42,6 +43,7 @@ const PopupManagement: React.FC = () => {
     mobile_width: 90,
     mobile_height: 300,
     cookie_duration_days: 7,
+    always_show: false,
     is_active: false,
     start_date: '',
     end_date: '',
@@ -116,6 +118,7 @@ const PopupManagement: React.FC = () => {
       mobile_width: popup.mobile_width,
       mobile_height: popup.mobile_height,
       cookie_duration_days: popup.cookie_duration_days,
+      always_show: popup.always_show,
       is_active: popup.is_active,
       start_date: popup.start_date ? popup.start_date.split('T')[0] : '',
       end_date: popup.end_date ? popup.end_date.split('T')[0] : '',
@@ -169,6 +172,7 @@ const PopupManagement: React.FC = () => {
       mobile_width: 90,
       mobile_height: 300,
       cookie_duration_days: 7,
+      always_show: false,
       is_active: false,
       start_date: '',
       end_date: '',
@@ -401,7 +405,22 @@ const PopupManagement: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-4">
+              <div className="mt-4 space-y-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.always_show}
+                    onChange={(e) => setFormData({ ...formData, always_show: e.target.checked })}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Her Zaman Göster (Cookie'den Bağımsız)
+                  </span>
+                </label>
+                <p className="text-xs text-gray-500 ml-6">
+                  Yasal uyarılar ve zorunlu duyurular için. Aktif olduğunda popup her ziyarette görüntülenir.
+                </p>
+
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -447,7 +466,7 @@ const PopupManagement: React.FC = () => {
                 Boyutlar
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Cookie (Gün)
+                Gösterim
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tarih Aralığı
@@ -474,8 +493,14 @@ const PopupManagement: React.FC = () => {
                   <div>T: {popup.tablet_width}x{popup.tablet_height}px</div>
                   <div>M: {popup.mobile_width}%x{popup.mobile_height}px</div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {popup.cookie_duration_days} gün
+                <td className="px-6 py-4 text-sm">
+                  {popup.always_show ? (
+                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                      Her Zaman Göster
+                    </span>
+                  ) : (
+                    <span className="text-gray-500">Cookie: {popup.cookie_duration_days} gün</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">
                   {popup.start_date && (

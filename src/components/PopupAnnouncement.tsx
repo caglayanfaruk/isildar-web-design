@@ -17,6 +17,7 @@ interface PopupData {
   mobile_width: number;
   mobile_height: number;
   cookie_duration_days: number;
+  always_show: boolean;
 }
 
 const PopupAnnouncement: React.FC = () => {
@@ -42,6 +43,14 @@ const PopupAnnouncement: React.FC = () => {
 
       if (error || !data) return;
 
+      // If always_show is true, show popup every time regardless of cookie
+      if (data.always_show) {
+        setPopup(data);
+        setIsVisible(true);
+        return;
+      }
+
+      // Otherwise, check cookie
       const cookieName = `popup_closed_${data.id}`;
       const popupClosed = getCookie(cookieName);
 
@@ -55,7 +64,8 @@ const PopupAnnouncement: React.FC = () => {
   };
 
   const handleClose = () => {
-    if (popup) {
+    if (popup && !popup.always_show) {
+      // Only set cookie if not always_show popup
       const cookieName = `popup_closed_${popup.id}`;
       setCookie(cookieName, 'true', popup.cookie_duration_days);
     }
