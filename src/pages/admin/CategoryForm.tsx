@@ -444,74 +444,46 @@ const CategoryForm = () => {
                   Bu kategorideki urunler icin hangi ozelliklerin gorunecegini secin. Secilen ozellikler urun eklerken otomatik olarak yuklenecektir.
                 </p>
 
-                {(() => {
-                  const productAttrs = attributes.filter((a: any) => a.scope === 'product' || a.scope === 'both' || !a.scope);
-                  const globalAttrs = attributes.filter((a: any) => a.applies_to_all_categories && (a.scope === 'product' || a.scope === 'both'));
-
-                  return (
-                    <>
-                      {globalAttrs.length > 0 && (
-                        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <h4 className="text-sm font-semibold text-blue-900 mb-2">Evrensel Ozellikler</h4>
-                          <p className="text-xs text-blue-700 mb-3">Bu ozellikler tum kategorilerde otomatik olarak gorunur</p>
-                          <div className="flex flex-wrap gap-2">
-                            {globalAttrs.map((attr: any) => (
-                              <span key={attr.id} className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                {attr.name}
-                              </span>
-                            ))}
+                {attributes.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {attributes.map((attribute: any) => (
+                      <label key={attribute.id} className="flex items-start p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={formData.category_attributes.includes(attribute.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({
+                                ...formData,
+                                category_attributes: [...formData.category_attributes, attribute.id]
+                              });
+                            } else {
+                              setFormData({
+                                ...formData,
+                                category_attributes: formData.category_attributes.filter(attrId => attrId !== attribute.id)
+                              });
+                            }
+                          }}
+                          className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <div className="ml-3 flex-1">
+                          <div className="text-sm font-medium text-gray-900">{attribute.name}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {attribute.scope === 'product' && 'Urun'}
+                            {attribute.scope === 'variant' && 'Varyant'}
+                            {attribute.scope === 'both' && 'Urun + Varyant'}
+                            {!attribute.scope && attribute.type}
                           </div>
                         </div>
-                      )}
-
-                      {productAttrs.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-gray-900 mb-3">Urun Ozellikleri</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {productAttrs.map((attribute: any) => (
-                              <label key={attribute.id} className="flex items-start p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.category_attributes.includes(attribute.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setFormData({
-                                        ...formData,
-                                        category_attributes: [...formData.category_attributes, attribute.id]
-                                      });
-                                    } else {
-                                      setFormData({
-                                        ...formData,
-                                        category_attributes: formData.category_attributes.filter(attrId => attrId !== attribute.id)
-                                      });
-                                    }
-                                  }}
-                                  disabled={attribute.applies_to_all_categories}
-                                  className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                />
-                                <div className="ml-3 flex-1">
-                                  <div className="text-sm font-medium text-gray-900">{attribute.name}</div>
-                                  <div className="text-xs text-gray-500 mt-0.5">
-                                    {attribute.scope === 'product' && 'Urun'}
-                                    {attribute.scope === 'both' && 'Her Ikisi'}
-                                    {!attribute.scope && attribute.type}
-                                  </div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {productAttrs.length === 0 && globalAttrs.length === 0 && (
-                        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                          <p className="text-gray-500">Henuz urun ozelligi tanimlanmamis</p>
-                          <p className="text-sm text-gray-400 mt-1">Once Admin - Ozellik Yonetimi'nden ozellik ekleyin</p>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <p className="text-gray-500">Henuz urun ozelligi tanimlanmamis</p>
+                    <p className="text-sm text-gray-400 mt-1">Once Admin - Ozellik Yonetimi'nden ozellik ekleyin</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -398,21 +398,6 @@ const ProductForm = () => {
         attributesData = Array.from(uniqueAttrs.values());
       }
 
-      const { data: globalAttrs, error: globalError } = await supabase
-        .from('product_attributes')
-        .select('*')
-        .eq('applies_to_all_categories', true)
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (globalError) throw globalError;
-
-      const globalAttrIds = new Set(globalAttrs?.map((a: any) => a.id) || []);
-      attributesData = [
-        ...attributesData.filter((a: any) => !globalAttrIds.has(a.id)),
-        ...(globalAttrs || [])
-      ];
-
       const { data: valuesData, error: valuesError } = await supabase
         .from('product_attribute_values')
         .select('*')
@@ -473,22 +458,6 @@ const ProductForm = () => {
       });
 
       variantAttributesData = Array.from(uniqueAttrs.values());
-
-      const { data: globalVariantAttrs } = await supabase
-        .from('product_attributes')
-        .select('*')
-        .eq('applies_to_all_categories', true)
-        .in('scope', ['variant', 'both'])
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (globalVariantAttrs) {
-        const globalAttrIds = new Set(globalVariantAttrs.map((a: any) => a.id));
-        variantAttributesData = [
-          ...variantAttributesData.filter((a: any) => !globalAttrIds.has(a.id)),
-          ...globalVariantAttrs
-        ];
-      }
 
       const { data: allValues } = await supabase
         .from('product_attribute_values')
@@ -1415,6 +1384,68 @@ const ProductForm = () => {
                   </div>
                 </div>
               </div>
+
+              {formData.product_type === 'simple' && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Paketleme / Lojistik</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Kutu Adet
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.quantity_per_box || ''}
+                        onChange={(e) => setFormData({ ...formData, quantity_per_box: parseInt(e.target.value) || 0 })}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Koli Adet
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.quantity_per_shrink || ''}
+                        onChange={(e) => setFormData({ ...formData, quantity_per_shrink: parseInt(e.target.value) || 0 })}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Koli Hacim (m3)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.001"
+                        value={formData.shrink_volume || ''}
+                        onChange={(e) => setFormData({ ...formData, shrink_volume: parseFloat(e.target.value) || 0 })}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Koli Agirlik (kg)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.weight || ''}
+                        onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) || 0 })}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
             </div>
           )}
